@@ -1,0 +1,181 @@
+// Sistema de Gestão Hospitalar - Modelagem de dados
+// Banco: MySQL | Convenção: nomes em português, alinhado ao domínio
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// --- Paciente (agenda, prontuário, internações, prescrições) ---
+model Paciente {
+  id             String   @id @default(uuid())
+  nomeCompleto   String
+  cpf            String   @unique
+  email          String?
+  dataNascimento DateTime
+  telefone       String?
+  criadoEm       DateTime @default(now())
+  atualizadoEm   DateTime @updatedAt
+
+  consultas   Consulta[]
+  exames       Exame[]
+  prescricoes  Prescricao[]
+  internacoes  Internacao[]
+
+  @@map("pacientes")
+}
+
+// --- Médico (consultas, prescrições) ---
+model Medico {
+  id           String   @id @default(uuid())
+  nomeCompleto String
+  crm          String   @unique
+  especialidade String
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  consultas   Consulta[]
+  prescricoes Prescricao[]
+
+  @@map("medicos")
+}
+
+// --- Usuário do sistema (login, perfis) ---
+model Usuario {
+  id           String   @id @default(uuid())
+  nomeCompleto String
+  email        String   @unique
+  senhaHash    String
+  perfil       PerfilUsuario
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@map("usuarios")
+}
+
+enum PerfilUsuario {
+  ADMINISTRADOR
+  MEDICO
+  ATENDENTE
+
+  @@map("perfil_usuario")
+}
+
+// --- Consulta (agendamento, status) ---
+model Consulta {
+  id          String         @id @default(uuid())
+  pacienteId  String
+  medicoId    String
+  inicio      DateTime
+  fim         DateTime
+  status      StatusConsulta
+  observacoes String?
+  criadoEm    DateTime       @default(now())
+  atualizadoEm DateTime     @updatedAt
+
+  paciente Paciente @relation(fields: [pacienteId], references: [id], onDelete: Restrict)
+  medico   Medico   @relation(fields: [medicoId], references: [id], onDelete: Restrict)
+
+  @@index([pacienteId])
+  @@index([medicoId, inicio])
+  @@map("consultas")
+}
+
+enum StatusConsulta {
+  AGENDADA
+  CANCELADA
+  REALIZADA
+
+  @@map("status_consulta")
+}
+
+// --- Exame (agendamento, resultado) ---
+model Exame {
+  id          String      @id @default(uuid())
+  pacienteId  String
+  tipo        String
+  dataHora    DateTime
+  local       String
+  status      StatusExame
+  resultado   String?
+  criadoEm    DateTime    @default(now())
+  atualizadoEm DateTime  @updatedAt
+
+  paciente Paciente @relation(fields: [pacienteId], references: [id], onDelete: Restrict)
+
+  @@index([pacienteId])
+  @@map("exames")
+}
+
+enum StatusExame {
+  AGENDADO
+  CANCELADO
+  REALIZADO
+
+  @@map("status_exame")
+}
+
+// --- Prescrição (itens em tabela separada) ---
+model Prescricao {
+  id                 String   @id @default(uuid())
+  pacienteId         String
+  medicoId           String
+  observacoesGerais  String?
+  criadoEm           DateTime @default(now())
+  atualizadoEm       DateTime @updatedAt
+
+  paciente Paciente        @relation(fields: [pacienteId], references: [id], onDelete: Restrict)
+  medico   Medico          @relation(fields: [medicoId], references: [id], onDelete: Restrict)
+  itens    PrescricaoItem[]
+
+  @@index([pacienteId])
+  @@map("prescricoes")
+}
+
+model PrescricaoItem {
+  id            String  @id @default(uuid())
+  prescricaoId  String
+  medicamento   String
+  dosagem       String
+  frequencia    String
+  duracaoDias   Int?
+
+  prescricao Prescricao @relation(fields: [prescricaoId], references: [id], onDelete: Cascade)
+
+  @@index([prescricaoId])
+  @@map("prescricao_itens")
+}
+
+// --- Internação ---
+model Internacao {
+  id          String           @id @default(uuid())
+  pacienteId  String
+  quarto      String
+  leito       String
+  motivo      String
+  dataEntrada DateTime
+  dataSaida   DateTime?
+  status      StatusInternacao
+  observacoes String?
+  criadoEm    DateTime         @default(now())
+  atualizadoEm DateTime       @updatedAt
+
+  paciente Paciente @relation(fields: [pacienteId], references: [id], onDelete: Restrict)
+
+  @@index([pacienteId])
+  @@index([pacienteId, status])
+  @@map("internacoes")
+}
+
+enum StatusInternacao {
+  ATIVA
+  ALTA
+  TRANSFERIDA
+
+  @@map("status_internacao")
+}
