@@ -96,7 +96,7 @@ export function PaginaLogin() {
                 name="email"
                 type="email"
                 autoComplete="email"
-                placeholder="seu.email@hospital.com.br"
+                placeholder="seu.email@janjao.com.br"
                 value={form.email}
                 onChange={(ev) => setForm((f) => ({ ...f, email: ev.target.value }))}
               />
