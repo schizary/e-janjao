@@ -71,3 +71,32 @@ Se preferir um único comando para rodar ambos em desenvolvimento, pode-se adici
 - Se receber erro do Prisma, execute `npm run prisma:generate` novamente.
 - Verifique permissões do usuário do banco e se o `DATABASE_URL` está correto.
 - Variáveis obrigatórias do backend estão em `backend/src/config/ambiente.ts`.
+
+## Criar usuário manualmente (para conseguir logar)
+
+O login do sistema usa a tabela **`usuarios`** (model `Usuario` do Prisma com `@@map("usuarios")`) e armazena a senha como **hash bcrypt** no campo `senhaHash`.
+
+### 1) Gerar o `senhaHash` (bcrypt)
+
+No terminal, dentro da pasta `backend`:
+
+```powershell
+cd backend
+node -e "const bcrypt=require('bcrypt'); bcrypt.hash('123456', 10).then(h=>console.log(h))"
+```
+
+Copie o hash gerado (começa com `$2b$...`).
+
+### 2) Inserir o usuário no MySQL
+
+No seu cliente MySQL (Workbench/DBeaver/CLI), execute (troque `HASH_AQUI` pelo hash gerado):
+
+```sql
+INSERT INTO usuarios (id, nomeCompleto, email, senhaHash, perfil, ativo, criadoEm, atualizadoEm)
+VALUES (UUID(), 'Administrador Janjão', 'admin@janjao.com.br', 'HASH_AQUI', 'ADMINISTRADOR', 1, NOW(), NOW());
+```
+
+### 3) Logar no frontend
+
+- **E-mail**: `admin@janjao.com.br`
+- **Senha**: `123456`
