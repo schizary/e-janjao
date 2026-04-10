@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "e-janjao-mobile",
+    "slug": "e-janjao-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": ["**/*"]
+  }
+}
