@@ -1,2 +1,2 @@
-// Feature: Médicos
-// A implementar na Fase 7.
+export { PaginaMedicosLista } from './paginas/PaginaMedicosLista';
+export { PaginaMedicoNovo } from './paginas/PaginaMedicoNovo';

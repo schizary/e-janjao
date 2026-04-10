@@ -1,10 +1,19 @@
 import express, { Express } from 'express';
+import cors from 'cors';
 import { criarRotas, Controllers } from './rotas/index';
 import { erroMiddleware } from './middlewares/ErroMiddleware';
+import { ambiente } from '../../config/ambiente';
 
 export function criarServidor(controllers: Controllers): Express {
   const app = express();
 
+  app.use(
+    cors({
+      origin: ambiente.corsOrigins,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+    }),
+  );
   app.use(express.json());
 
   app.get('/health', (_req, res) => {

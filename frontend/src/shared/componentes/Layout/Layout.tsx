@@ -11,13 +11,15 @@ interface LayoutProps {
  */
 export function Layout({ children, titulo }: LayoutProps) {
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="app-layout">
       {titulo != null && (
-        <header style={{ padding: '1rem 2rem', borderBottom: '1px solid var(--cor-borda)', background: 'var(--cor-fundo-card)' }}>
-          <h1 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--cor-primaria-escura)' }}>{titulo}</h1>
+        <header className="app-header">
+          <div className="app-header__conteudo">
+            <h1 className="app-titulo">{titulo}</h1>
+          </div>
         </header>
       )}
-      <main style={{ flex: 1, padding: '1.5rem 2rem' }}>{children}</main>
+      <main className="app-main">{children}</main>
     </div>
   );
 }

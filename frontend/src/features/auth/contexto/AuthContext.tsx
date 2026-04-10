@@ -1,18 +1,6 @@
-import { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import type { Usuario } from '@/shared/tipos/api';
-
-interface EstadoAuth {
-  token: string | null;
-  usuario: Usuario | null;
-  autenticado: boolean;
-}
-
-interface AuthContextValor extends EstadoAuth {
-  definirSessao: (token: string | null, usuario: Usuario | null) => void;
-  sair: () => void;
-}
-
-const AuthContext = createContext<AuthContextValor | null>( null );
+import { AuthContext, type AuthContextValor, type EstadoAuth } from './AuthContextBase';
 
 const CHAVE_TOKEN = 'gestao_hospitalar_token';
 const CHAVE_USUARIO = 'gestao_hospitalar_usuario';
@@ -61,12 +49,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return <AuthContext.Provider value={valor}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth(): AuthContextValor {
-  const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error('useAuth deve ser usado dentro de AuthProvider');
-  }
-  return ctx;
 }

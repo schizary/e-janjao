@@ -14,6 +14,23 @@ export interface OpcoesRequisicao {
   headers?: Record<string, string>;
 }
 
+export interface DetalheErroValidacao {
+  campo: string;
+  mensagem: string;
+}
+
+export class ErroApi extends Error {
+  status: number;
+  detalhes?: DetalheErroValidacao[];
+
+  constructor(mensagem: string, status: number, detalhes?: DetalheErroValidacao[]) {
+    super(mensagem);
+    this.name = 'ErroApi';
+    this.status = status;
+    this.detalhes = detalhes;
+  }
+}
+
 export async function requisicao<T>(
   caminho: string,
   opcoes: OpcoesRequisicao = {},
@@ -39,12 +56,23 @@ export async function requisicao<T>(
   }
 
   const resposta = await fetch(`${URL_BASE}${caminho}`, config);
-  const dados = await resposta.json().catch(() => ({}));
+  const contentType = resposta.headers.get('content-type') ?? '';
+  const temJson = contentType.includes('application/json');
+  const dados: unknown = temJson ? await resposta.json().catch(() => ({})) : null;
 
   if (!resposta.ok) {
-    const mensagem = typeof dados?.erro === 'string' ? dados.erro : 'Erro na requisição';
-    throw new Error(mensagem);
+    const erroObj = (dados ?? {}) as { erro?: unknown; detalhes?: unknown };
+    const mensagem =
+      typeof erroObj.erro === 'string' && erroObj.erro.trim() !== ''
+        ? erroObj.erro
+        : 'Erro na requisição';
+    const detalhes = Array.isArray(erroObj.detalhes)
+      ? (erroObj.detalhes as Array<{ campo?: unknown; mensagem?: unknown }>)
+          .filter((d) => typeof d?.campo === 'string' && typeof d?.mensagem === 'string')
+          .map((d) => ({ campo: d.campo as string, mensagem: d.mensagem as string }))
+      : undefined;
+    throw new ErroApi(mensagem, resposta.status, detalhes);
   }
 
-  return dados as T;
+  return (dados ?? null) as T;
 }

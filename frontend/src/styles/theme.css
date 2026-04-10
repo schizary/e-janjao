@@ -4,39 +4,72 @@
  */
 :root {
   /* Primária (aquamarine) */
-  --cor-primaria: #5b9b9d;
-  --cor-primaria-clara: #8fc9cb;
-  --cor-primaria-escura: #3d7a7c;
-  --cor-primaria-hover: #4a8a8c;
-  --cor-primaria-ativo: #2e6b6d;
+  --cor-primaria: #3b9f9c;
+  --cor-primaria-clara: #7fd0cc;
+  --cor-primaria-escura: #2c6f6d;
+  --cor-primaria-hover: #338f8c;
+  --cor-primaria-ativo: #2a7f7c;
 
   /* Fundos */
-  --cor-fundo: #f4fafa;
+  --cor-fundo: #f3faf9;
   --cor-fundo-card: #ffffff;
   --cor-fundo-input: #ffffff;
-  --cor-fundo-hover: #e8f4f4;
+  --cor-fundo-hover: #e8f6f5;
+  --cor-fundo-elevado: #ffffff;
 
   /* Texto */
-  --cor-texto: #1e4646;
-  --cor-texto-secundario: #4a6e6e;
-  --cor-texto-muted: #6b8a8a;
+  --cor-texto: #123f3f;
+  --cor-texto-secundario: #335e5e;
+  --cor-texto-muted: #5b7f7f;
 
   /* Bordas e divisores */
-  --cor-borda: #c5e0e0;
+  --cor-borda: #c8e6e4;
+  --cor-borda-suave: #e3f2f1;
   --cor-borda-focus: var(--cor-primaria);
 
   /* Estados */
   --cor-sucesso: #2d8a6e;
   --cor-aviso: #c9a227;
-  --cor-erro: #b85450;
+  --cor-erro: #b24b4a;
   --cor-info: var(--cor-primaria);
+  --cor-perigo: var(--cor-erro);
 
   /* Sombras */
   --sombra-card: 0 1px 3px rgba(30, 70, 70, 0.08);
   --sombra-card-hover: 0 4px 12px rgba(30, 70, 70, 0.12);
+  --sombra-flutuante: 0 10px 30px rgba(18, 63, 63, 0.14);
 
   /* Espaçamento base */
   --espacamento-base: 8px;
-  --raio-borda: 8px;
+  --espaco-1: calc(var(--espacamento-base) * 0.5); /* 4px */
+  --espaco-2: calc(var(--espacamento-base) * 1); /* 8px */
+  --espaco-3: calc(var(--espacamento-base) * 1.5); /* 12px */
+  --espaco-4: calc(var(--espacamento-base) * 2); /* 16px */
+  --espaco-5: calc(var(--espacamento-base) * 3); /* 24px */
+  --espaco-6: calc(var(--espacamento-base) * 4); /* 32px */
+  --espaco-7: calc(var(--espacamento-base) * 5); /* 40px */
+  --espaco-8: calc(var(--espacamento-base) * 6); /* 48px */
+
+  --raio-borda: 12px;
   --raio-borda-input: 6px;
+  --raio-borda-botao: 10px;
+
+  /* Tipografia */
+  --tamanho-texto: 16px;
+  --altura-linha: 1.5;
+  --peso-regular: 400;
+  --peso-medio: 500;
+  --peso-semi: 600;
+
+  /* Layout */
+  --largura-conteudo: 1120px;
+  --largura-conteudo-estreita: 820px;
+
+  /* Transições */
+  --duracao-1: 120ms;
+  --duracao-2: 180ms;
+  --easing-padrao: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* Anel de foco */
+  --foco-anel: 0 0 0 3px rgba(59, 159, 156, 0.22);
 }

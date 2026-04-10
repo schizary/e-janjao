@@ -1,23 +1,41 @@
-import { useAuth } from '@/features/auth';
-
 export function PaginaInicial() {
-  const { usuario, sair } = useAuth();
-
   return (
-    <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', borderBottom: '1px solid var(--cor-borda)', paddingBottom: '1rem' }}>
-        <h1 style={{ margin: 0, color: 'var(--cor-primaria-escura)' }}>Gestão Hospitalar</h1>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <span style={{ color: 'var(--cor-texto-secundario)' }}>{usuario?.nomeCompleto}</span>
-          <button type="button" onClick={sair} style={{ padding: '0.5rem 1rem', borderRadius: 'var(--raio-borda)', border: '1px solid var(--cor-borda)', background: 'var(--cor-fundo-card)', color: 'var(--cor-texto)' }}>
-            Sair
-          </button>
+    <div className="container">
+      <div className="stack">
+        <div>
+          <h1 style={{ marginBottom: 'var(--espaco-2)' }}>Painel</h1>
+          <p style={{ margin: 0 }}>
+            Bem-vindo(a) ao sistema do Hospital Janjão. Selecione um módulo para começar.
+          </p>
         </div>
-      </header>
-      <section>
-        <h2 style={{ color: 'var(--cor-texto-secundario)', fontWeight: 500 }}>Início</h2>
-        <p>Área logada. Módulos (Pacientes, Médicos, Consultas, etc.) serão implementados na Fase 7.</p>
-      </section>
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+            gap: 'var(--espaco-4)',
+          }}
+        >
+          <a className="card card--padrao card--hover" href="/pacientes" style={{ display: 'block' }}>
+            <h2 style={{ marginBottom: 'var(--espaco-2)', fontSize: '1.1rem' }}>Pacientes</h2>
+            <p style={{ margin: 0 }}>
+              Cadastro, busca e detalhes de pacientes.
+            </p>
+          </a>
+          <a className="card card--padrao card--hover" href="/medicos" style={{ display: 'block' }}>
+            <h2 style={{ marginBottom: 'var(--espaco-2)', fontSize: '1.1rem' }}>Médicos</h2>
+            <p style={{ margin: 0 }}>
+              Lista de médicos, especialidades e cadastro.
+            </p>
+          </a>
+          <a className="card card--padrao card--hover" href="/consultas" style={{ display: 'block' }}>
+            <h2 style={{ marginBottom: 'var(--espaco-2)', fontSize: '1.1rem' }}>Consultas</h2>
+            <p style={{ margin: 0 }}>
+              Agendamento e acompanhamento por paciente.
+            </p>
+          </a>
+        </div>
+      </div>
     </div>
   );
 }

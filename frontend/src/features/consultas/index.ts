@@ -1,2 +1,1 @@
-// Feature: Consultas
-// A implementar na Fase 7.
+export { PaginaConsultas } from './paginas/PaginaConsultas';
