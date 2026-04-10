@@ -1,39 +1,83 @@
-# 🏥 Sistema de Gestão Hospitalar
+# e-janjao
 
-Aplicativo móvel desenvolvido para gerenciamento de pacientes, médicos e processos hospitalares, integrado a uma API REST.
+Projeto completo do **Sistema de Gestão Hospitalar** com:
+- **backend** em Node.js + Express + TypeScript + Prisma + MySQL
+- **mobile** em Expo + React Native + TypeScript
+- **CI** com GitHub Actions
 
----
+## Estrutura
 
-## 🚀 Tecnologias utilizadas
+```text
+.github/workflows/ci.yml
+backend/
+mobile/
+```
 
-### 📱 Mobile
-- React Native (Expo)
-- TypeScript
+## 1) Backend
 
-### ⚙️ Backend
-- Node.js
-- Express
-- Prisma ORM
+### Pré-requisitos
+- Node.js 18+
+- MySQL 8+
 
-### 🗄️ Banco de Dados
-- MySQL
+### Configuração
+Crie `backend/.env` com base em `backend/.env.example`.
 
-### ☁️ Cloud
-- Estruturado para Azure (execução local nesta fase)
-
----
-
-## ⚙️ Configuração do ambiente
-
-### 🔐 Variáveis de ambiente
-
-#### 📱 Mobile (`.env`)
-
-Utilize apenas **uma URL ativa por vez**, comentando a outra:
+Exemplo:
 
 ```env
-# 📱 Para celular físico (mesma rede)
-# EXPO_PUBLIC_API_URL=http://seu_ip_rede:3002/api
+DATABASE_URL="mysql://root:sua_senha@localhost:3306/ejanjao"
+JWT_SECRET="troque_essa_chave"
+JWT_EXPIRACAO="7d"
+PORTA="3000"
+NODE_ENV="development"
+```
 
-# 💻 Para testes locais (navegador ou localhost)
-EXPO_PUBLIC_API_URL=http://localhost:3002/api
+### Instalação
+```bash
+cd backend
+npm install
+npm run prisma:generate
+npm run prisma:push
+npm run seed
+npm run dev
+```
+
+### Usuário inicial
+Após rodar o seed:
+- e-mail: `admin@janjao.com.br`
+- senha: `123456`
+
+A API ficará disponível em `http://localhost:3002/api`.
+
+## 2) Mobile
+
+Crie `mobile/.env`:
+
+```env
+EXPO_PUBLIC_API_URL=http://SEU_IP_LOCAL:3002/api
+```
+
+> No emulador Android do computador você também pode usar `http://localhost:3002/api`.
+
+### Instalação
+```bash
+cd mobile
+npm install
+npm start
+```
+
+## Fluxo do sistema
+1. O app mobile faz login em `POST /auth/login`.
+2. O backend valida o usuário e devolve um token JWT.
+3. O app usa esse token para listar e cadastrar pacientes, médicos, consultas, exames, prescrições e internações.
+
+## Recursos implementados
+- Login real com JWT
+- CRUD completo para pacientes
+- CRUD completo para médicos
+- CRUD completo para consultas
+- CRUD completo para exames
+- CRUD completo para prescrições e itens
+- CRUD completo para internações
+- Seed com dados iniciais
+- Workflow de CI
