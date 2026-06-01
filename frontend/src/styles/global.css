@@ -22,8 +22,8 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background:
-    radial-gradient(1200px 800px at 10% 0%, rgba(127, 208, 204, 0.16), transparent 55%),
-    radial-gradient(900px 700px at 100% 20%, rgba(59, 159, 156, 0.10), transparent 55%),
+    radial-gradient(1200px 800px at 10% 0%, rgba(var(--cor-primaria-rgb), 0.16), transparent 55%),
+    radial-gradient(900px 700px at 100% 20%, rgba(var(--cor-primaria-rgb), 0.1), transparent 55%),
     var(--cor-fundo);
   color: var(--cor-texto);
 }
@@ -142,9 +142,10 @@ small {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--cor-borda);
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(var(--cor-primaria-rgb), 0.18);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.04);
 }
 
 .app-header__conteudo {
@@ -162,6 +163,7 @@ small {
   align-items: center;
   gap: var(--espaco-3);
   flex-wrap: wrap;
+  flex: 1;
 }
 
 .topnav__marca {
@@ -186,7 +188,7 @@ small {
   padding: 0.45rem 0.7rem;
   border-radius: 999px;
   border: 1px solid transparent;
-  color: var(--cor-texto-secundario);
+  color: var(--cor-primaria-escura);
   text-decoration: none;
   font-weight: var(--peso-medio);
   transition:
@@ -196,15 +198,15 @@ small {
 }
 
 .topnav__link:hover {
-  background: rgba(127, 208, 204, 0.20);
-  border-color: rgba(127, 208, 204, 0.32);
+  background: rgba(var(--cor-primaria-rgb), 0.14);
+  border-color: rgba(var(--cor-primaria-rgb), 0.26);
   text-decoration: none;
   color: var(--cor-primaria-escura);
 }
 
 .topnav__link--ativo {
-  background: rgba(59, 159, 156, 0.14);
-  border-color: rgba(59, 159, 156, 0.26);
+  background: rgba(var(--cor-primaria-rgb), 0.14);
+  border-color: rgba(var(--cor-primaria-rgb), 0.28);
   color: var(--cor-primaria-escura);
 }
 
@@ -215,6 +217,39 @@ small {
   color: var(--cor-texto-secundario);
 }
 
+.topnav__busca {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.48rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--cor-primaria-rgb), 0.25);
+  background: rgba(255, 255, 255, 0.9);
+  max-width: 360px;
+  flex: 0 0 auto;
+}
+
+.topnav__busca svg {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  color: var(--cor-primaria);
+}
+
+.topnav__busca input {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  outline: none !important;
+  width: 100%;
+  color: var(--cor-primaria-escura);
+}
+
+.topnav__busca input::placeholder {
+  color: var(--cor-texto-muted);
+}
+
 .app-titulo {
   margin: 0;
   font-size: 1.25rem;
@@ -222,8 +257,100 @@ small {
   color: var(--cor-primaria-escura);
 }
 
+.app-titulo__destaque {
+  color: var(--cor-primaria);
+}
+
 .app-main {
   flex: 1;
+}
+
+/* Layout com cara de modal para telas de cadastro */
+.cadastro-modal-bg {
+  position: relative;
+  padding-top: var(--espaco-6);
+  padding-bottom: var(--espaco-6);
+}
+
+.cadastro-modal-bg::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(900px 600px at 15% 10%, rgba(var(--cor-primaria-rgb), 0.16), transparent 65%),
+    radial-gradient(900px 600px at 85% 20%, rgba(var(--cor-primaria-rgb), 0.1), transparent 60%),
+    rgba(15, 34, 28, 0.18);
+}
+
+.cadastro-modal {
+  background: rgba(244, 248, 246, 0.88);
+  border: 1px solid rgba(var(--cor-primaria-rgb), 0.16);
+  border-radius: 20px;
+  box-shadow: 0 24px 70px rgba(15, 34, 28, 0.22);
+  padding: var(--espaco-5);
+}
+
+.cadastro-modal__header {
+  margin-bottom: var(--espaco-4);
+}
+
+.cadastro-modal__card {
+  background: #ffffff;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(13, 28, 23, 0.42);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--espaco-5);
+  animation: modalOverlayFadeIn 180ms var(--easing-padrao);
+}
+
+.modal-dialog {
+  width: min(860px, 100%);
+  max-height: calc(100vh - 3rem);
+  overflow: auto;
+  background: rgba(244, 248, 246, 0.96);
+  border: 1px solid rgba(var(--cor-primaria-rgb), 0.16);
+  border-radius: 18px;
+  box-shadow: 0 26px 70px rgba(13, 28, 23, 0.34);
+  padding: var(--espaco-5);
+  transform-origin: center top;
+  animation: modalDialogIn 220ms var(--easing-padrao);
+}
+
+.modal-dialog__header {
+  margin-bottom: var(--espaco-4);
+}
+
+.modal-dialog__card {
+  background: #ffffff;
+}
+
+@keyframes modalOverlayFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalDialogIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* Botões */
@@ -316,7 +443,7 @@ small {
 }
 
 :where(input, select, textarea):hover {
-  border-color: rgba(59, 159, 156, 0.55);
+  border-color: rgba(var(--cor-primaria-rgb), 0.55);
 }
 
 :where(input, select, textarea):focus-visible {
@@ -362,18 +489,22 @@ small {
 }
 
 .tabela th {
-  background: linear-gradient(180deg, rgba(127, 208, 204, 0.22), rgba(127, 208, 204, 0.10));
+  background: linear-gradient(
+    180deg,
+    rgba(var(--cor-primaria-rgb), 0.22),
+    rgba(var(--cor-primaria-rgb), 0.1)
+  );
   color: var(--cor-primaria-escura);
   font-weight: var(--peso-semi);
   border-bottom: 1px solid var(--cor-borda);
 }
 
 .tabela tbody tr:nth-child(even) td {
-  background: rgba(232, 246, 245, 0.55);
+  background: rgba(var(--cor-primaria-rgb), 0.06);
 }
 
 .tabela tbody tr:hover td {
-  background: rgba(127, 208, 204, 0.22);
+  background: rgba(var(--cor-primaria-rgb), 0.18);
   transition: background-color var(--duracao-2) var(--easing-padrao);
 }
 
@@ -396,6 +527,27 @@ small {
   .topnav__marca {
     min-width: unset;
     width: 100%;
+  }
+
+  .topnav__busca {
+    width: 100%;
+    max-width: unset;
+    flex: 1 1 100%;
+  }
+
+  .cadastro-modal {
+    padding: var(--espaco-4);
+    border-radius: 16px;
+  }
+
+  .modal-overlay {
+    padding: var(--espaco-3);
+  }
+
+  .modal-dialog {
+    padding: var(--espaco-4);
+    border-radius: 14px;
+    max-height: calc(100vh - 1.5rem);
   }
 }
 

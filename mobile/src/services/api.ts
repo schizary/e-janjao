@@ -1,6 +1,9 @@
 import type { Consulta, Dashboard, Exame, Internacao, Medico, Paciente, Prescricao, Sessao } from '../types';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://10.0.2.2:3000";
+// Emulação: AVD Android acessa o host como 10.0.2.2, mas quando
+// o código roda no navegador (Expo web / browser) devemos usar localhost.
+const defaultApi = typeof window !== 'undefined' ? 'http://localhost:3000/api' : 'http://10.0.2.2:3000/api';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || defaultApi;
 
 async function request<T>(path: string, options: RequestInit = {}, token?: string): Promise<T> {
   const headers: Record<string, string> = {

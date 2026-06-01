@@ -3,12 +3,13 @@
  * Sensação: calmo, profissional, confiável
  */
 :root {
-  /* Primária (aquamarine) */
-  --cor-primaria: #3b9f9c;
-  --cor-primaria-clara: #7fd0cc;
-  --cor-primaria-escura: #2c6f6d;
-  --cor-primaria-hover: #338f8c;
-  --cor-primaria-ativo: #2a7f7c;
+  /* Primária (verde vivo do HUD) */
+  --cor-primaria-rgb: 0, 153, 93;
+  --cor-primaria: rgb(0, 153, 93);
+  --cor-primaria-clara: rgb(90, 201, 151);
+  --cor-primaria-escura: rgb(0, 120, 73);
+  --cor-primaria-hover: rgb(0, 135, 82);
+  --cor-primaria-ativo: rgb(0, 120, 73);
 
   /* Fundos */
   --cor-fundo: #f3faf9;
@@ -28,7 +29,7 @@
   --cor-borda-focus: var(--cor-primaria);
 
   /* Estados */
-  --cor-sucesso: #2d8a6e;
+  --cor-sucesso: var(--cor-primaria-escura);
   --cor-aviso: #c9a227;
   --cor-erro: #b24b4a;
   --cor-info: var(--cor-primaria);
@@ -71,5 +72,5 @@
   --easing-padrao: cubic-bezier(0.2, 0.8, 0.2, 1);
 
   /* Anel de foco */
-  --foco-anel: 0 0 0 3px rgba(59, 159, 156, 0.22);
+  --foco-anel: 0 0 0 3px rgba(var(--cor-primaria-rgb), 0.22);
 }

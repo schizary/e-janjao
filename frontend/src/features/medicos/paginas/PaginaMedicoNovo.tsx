@@ -59,9 +59,9 @@ export function PaginaMedicoNovo() {
   }
 
   return (
-    <div className="container container--estreito">
-      <div className="stack">
-        <div className="row row--entre" style={{ alignItems: 'flex-end' }}>
+    <div className="container container--estreito cadastro-modal-bg">
+      <div className="cadastro-modal">
+        <div className="row row--entre cadastro-modal__header" style={{ alignItems: 'flex-end' }}>
           <div>
             <h1 style={{ marginBottom: 'var(--espaco-2)' }}>Novo médico</h1>
             <p style={{ margin: 0 }}>Preencha os dados para cadastrar um novo médico.</p>
@@ -71,7 +71,7 @@ export function PaginaMedicoNovo() {
           </Link>
         </div>
 
-        <div className="card card--padrao">
+        <div className="card card--padrao cadastro-modal__card">
           {erroGeral && (
             <div
               role="alert"
