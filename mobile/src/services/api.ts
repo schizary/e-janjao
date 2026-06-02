@@ -1,4 +1,4 @@
-import type { Consulta, Dashboard, Exame, Internacao, Medico, Paciente, Prescricao, Sessao } from '../types';
+import type { Consulta, Exame, Internacao, Medico, Paciente, Prescricao, Sessao } from '../types';
 
 // Emulação: AVD Android acessa o host como 10.0.2.2, mas quando
 // o código roda no navegador (Expo web / browser) devemos usar localhost.
@@ -19,8 +19,12 @@ async function request<T>(path: string, options: RequestInit = {}, token?: strin
   if (!response.ok) {
     let message = 'Erro na requisição.';
     try {
-      const body = await response.json();
-      message = body.mensagem || message;
+      const body = await response.json() as { erro?: string; mensagem?: string; detalhes?: Array<{ mensagem?: string }> };
+      message = body.erro || body.mensagem || message;
+      if (body.detalhes?.length) {
+        const detalhes = body.detalhes.map((d) => d.mensagem).filter(Boolean).join(' ');
+        if (detalhes) message = `${message} ${detalhes}`;
+      }
     } catch {
       // ignore
     }
@@ -37,7 +41,6 @@ async function request<T>(path: string, options: RequestInit = {}, token?: strin
 export const api = {
   apiUrl: API_URL,
   login: (email: string, senha: string) => request<Sessao>('/auth/login', { method: 'POST', body: JSON.stringify({ email, senha }) }),
-  dashboard: (token: string) => request<Dashboard>('/dashboard', {}, token),
   listarPacientes: (token: string) => request<Paciente[]>('/pacientes', {}, token),
   criarPaciente: (token: string, body: Omit<Paciente, 'id'>) => request<Paciente>('/pacientes', { method: 'POST', body: JSON.stringify(body) }, token),
   listarMedicos: (token: string) => request<Medico[]>('/medicos', {}, token),

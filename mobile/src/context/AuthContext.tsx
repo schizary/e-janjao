@@ -21,7 +21,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setCarregar(true);
     try {
       const sessao = await api.login(email, senha);
-      setToken(sessao.token);
+      setToken(sessao.tokenAcesso);
       setUsuario(sessao.usuario);
     } finally {
       setCarregar(false);

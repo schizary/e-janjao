@@ -6,7 +6,7 @@ export interface Usuario {
 }
 
 export interface Sessao {
-  token: string;
+  tokenAcesso: string;
   usuario: Usuario;
 }
 
@@ -78,13 +78,4 @@ export interface Internacao {
   status: 'ATIVA' | 'ALTA' | 'TRANSFERIDA';
   observacoes?: string | null;
   paciente?: Paciente;
-}
-
-export interface Dashboard {
-  pacientes: number;
-  medicos: number;
-  consultas: number;
-  exames: number;
-  prescricoes: number;
-  internacoes: number;
 }
