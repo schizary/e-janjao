@@ -27,6 +27,11 @@ export function criarInternacoesRotas(controller: InternacoesController): Router
     autenticacaoMiddleware,
     controller.listarAtivasPorPacienteHandler,
   );
+  router.get(
+    '/paciente/:pacienteId',
+    autenticacaoMiddleware,
+    controller.listarPorPacienteHandler,
+  );
 
   return router;
 }

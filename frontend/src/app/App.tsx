@@ -9,6 +9,9 @@ import { PaginaPacienteDetalhes } from '@/features/pacientes/paginas/PaginaPacie
 import { PaginaMedicosLista } from '@/features/medicos/paginas/PaginaMedicosLista';
 import { PaginaMedicoNovo } from '@/features/medicos/paginas/PaginaMedicoNovo';
 import { PaginaConsultas } from '@/features/consultas/paginas/PaginaConsultas';
+import { PaginaExames } from '@/features/exames/paginas/PaginaExames';
+import { PaginaPrescricoes } from '@/features/prescricoes/paginas/PaginaPrescricoes';
+import { PaginaInternacoes } from '@/features/internacoes/paginas/PaginaInternacoes';
 
 function RotaProtegida({ children }: { children: ReactNode }) {
   const { autenticado } = useAuth();
@@ -40,6 +43,9 @@ export default function App() {
             <Route path="medicos" element={<PaginaMedicosLista />} />
             <Route path="medicos/novo" element={<PaginaMedicoNovo />} />
             <Route path="consultas" element={<PaginaConsultas />} />
+            <Route path="exames" element={<PaginaExames />} />
+            <Route path="prescricoes" element={<PaginaPrescricoes />} />
+            <Route path="internacoes" element={<PaginaInternacoes />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

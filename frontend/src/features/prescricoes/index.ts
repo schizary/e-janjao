@@ -1,2 +1,1 @@
-// Feature: Prescrições
-// A implementar na Fase 7.
+export { PaginaPrescricoes } from './paginas/PaginaPrescricoes';

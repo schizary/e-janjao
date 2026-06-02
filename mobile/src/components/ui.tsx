@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type KeyboardTypeOptions } from 'react-native';
 import {
   mascaraCpf,
@@ -115,6 +115,77 @@ function tecladoPadrao(tipo: TipoCampo): KeyboardTypeOptions {
     default:
       return 'default';
   }
+}
+
+export type OpcaoSeletor = { valor: string; rotulo: string };
+
+export function Seletor({
+  label,
+  value,
+  onChange,
+  opcoes,
+  placeholder = 'Selecione…',
+  disabled = false,
+}: {
+  label: string;
+  value: string;
+  onChange: (valor: string) => void;
+  opcoes: OpcaoSeletor[];
+  placeholder?: string;
+  disabled?: boolean;
+}) {
+  const [aberto, setAberto] = useState(false);
+  const selecionado = opcoes.find((o) => o.valor === value);
+  const textoExibido = selecionado?.rotulo ?? placeholder;
+
+  return (
+    <View style={{ gap: 6 }}>
+      <Text style={estilos.label}>{label}</Text>
+      <Pressable
+        onPress={() => !disabled && opcoes.length > 0 && setAberto(true)}
+        style={[estilos.input, (disabled || opcoes.length === 0) && { opacity: 0.55 }]}
+        disabled={disabled || opcoes.length === 0}
+      >
+        <Text style={{ color: selecionado ? cores.texto : '#8ca4a0' }}>{textoExibido}</Text>
+      </Pressable>
+
+      <Modal visible={aberto} transparent animationType="fade" onRequestClose={() => setAberto(false)}>
+        <View style={estilos.modalOverlay}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setAberto(false)} accessibilityLabel="Fechar seleção" />
+          <View style={[estilos.modalDialog, { maxHeight: '70%' }]}>
+            <View style={estilos.modalHeader}>
+              <Text style={estilos.modalTitulo}>{label}</Text>
+              <Pressable onPress={() => setAberto(false)} hitSlop={8}>
+                <Text style={{ color: cores.primariaEscura, fontWeight: '700' }}>Fechar</Text>
+              </Pressable>
+            </View>
+            <ScrollView contentContainerStyle={estilos.modalConteudo} keyboardShouldPersistTaps="handled">
+              {opcoes.map((opcao) => (
+                <Pressable
+                  key={opcao.valor}
+                  onPress={() => {
+                    onChange(opcao.valor);
+                    setAberto(false);
+                  }}
+                  style={{
+                    paddingVertical: 14,
+                    paddingHorizontal: 12,
+                    borderRadius: 12,
+                    backgroundColor: opcao.valor === value ? '#e7f7f4' : '#fff',
+                    borderWidth: 1,
+                    borderColor: opcao.valor === value ? cores.primaria : cores.borda,
+                    marginBottom: 8,
+                  }}
+                >
+                  <Text style={{ color: cores.texto, fontWeight: opcao.valor === value ? '700' : '500' }}>{opcao.rotulo}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+    </View>
+  );
 }
 
 export function Campo({

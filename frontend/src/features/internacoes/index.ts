@@ -1,2 +1,1 @@
-// Feature: Internações
-// A implementar na Fase 7.
+export { PaginaInternacoes } from './paginas/PaginaInternacoes';

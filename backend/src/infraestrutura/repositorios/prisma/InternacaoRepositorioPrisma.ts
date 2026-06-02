@@ -49,6 +49,14 @@ export class InternacaoRepositorioPrisma implements InternacaoRepositorio {
     return rows.map((row) => this.mapearParaDominio(row));
   }
 
+  async listarPorPaciente(pacienteId: string): Promise<Internacao[]> {
+    const rows = await prisma.internacao.findMany({
+      where: { pacienteId },
+      orderBy: { dataEntrada: 'desc' },
+    });
+    return rows.map((row) => this.mapearParaDominio(row));
+  }
+
   private mapearParaDominio(row: {
     id: string;
     pacienteId: string;

@@ -38,11 +38,13 @@ export function criarServidor(controllers: Controllers): Express {
         'POST /api/consultas/:id/cancelar',
         'GET /api/consultas/paciente/:pacienteId',
         'POST /api/exames',
+        'GET /api/exames/paciente/:pacienteId',
         'PATCH /api/exames/:id/resultado',
         'POST /api/prescricoes',
         'GET /api/prescricoes/paciente/:pacienteId',
         'POST /api/internacoes',
         'POST /api/internacoes/:id/alta',
+        'GET /api/internacoes/paciente/:pacienteId',
         'GET /api/internacoes/paciente/:pacienteId/ativas',
       ],
     });

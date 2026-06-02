@@ -1,2 +1,1 @@
-// Feature: Exames
-// A implementar na Fase 7.
+export { PaginaExames } from './paginas/PaginaExames';

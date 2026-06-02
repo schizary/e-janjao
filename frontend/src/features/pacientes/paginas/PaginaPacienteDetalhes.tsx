@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '@/features/auth';
 import type { Paciente, Consulta, Prescricao, Internacao } from '@/shared/tipos/api';
-import { ErroApi, requisicao } from '@/shared/api/cliente';
+import { ErroApi } from '@/shared/api/cliente';
 import { buscarPacientePorId, atualizarContatoPaciente } from '@/features/pacientes/api';
 import { listarConsultasPorPaciente } from '@/features/consultas/api';
+import { listarPrescricoesPorPaciente } from '@/features/prescricoes/api';
+import { listarInternacoesAtivasPorPaciente } from '@/features/internacoes/api';
 
 function obterMensagemErro(err: unknown): string {
   if (err instanceof ErroApi) return err.message;
@@ -80,8 +82,8 @@ export function PaginaPacienteDetalhes() {
       try {
         const [c, pr, i] = await Promise.all([
           listarConsultasPorPaciente({ pacienteId: id, token }).catch(() => [] as Consulta[]),
-          requisicao<Prescricao[]>(`/prescricoes/paciente/${id}`, { token }).catch(() => [] as Prescricao[]),
-          requisicao<Internacao[]>(`/internacoes/paciente/${id}/ativas`, { token }).catch(() => [] as Internacao[]),
+          listarPrescricoesPorPaciente({ pacienteId: id, token }).catch(() => [] as Prescricao[]),
+          listarInternacoesAtivasPorPaciente({ pacienteId: id, token }).catch(() => [] as Internacao[]),
         ]);
         setConsultas(c);
         setPrescricoes(pr);

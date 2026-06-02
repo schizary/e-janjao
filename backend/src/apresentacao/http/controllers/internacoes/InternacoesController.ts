@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { RegistrarInternacaoCasoDeUso } from '../../../../application/internacoes/casos-de-uso/RegistrarInternacaoCasoDeUso';
 import { DarAltaPacienteCasoDeUso } from '../../../../application/internacoes/casos-de-uso/DarAltaPacienteCasoDeUso';
 import { ListarInternacoesAtivasPorPacienteCasoDeUso } from '../../../../application/internacoes/casos-de-uso/ListarInternacoesAtivasPorPacienteCasoDeUso';
+import { ListarInternacoesPorPacienteCasoDeUso } from '../../../../application/internacoes/casos-de-uso/ListarInternacoesPorPacienteCasoDeUso';
 import { internacaoParaJson } from '../../mapeadores/mapeadoresResposta';
 
 export class InternacoesController {
@@ -9,6 +10,7 @@ export class InternacoesController {
     private readonly registrar: RegistrarInternacaoCasoDeUso,
     private readonly darAlta: DarAltaPacienteCasoDeUso,
     private readonly listarAtivasPorPaciente: ListarInternacoesAtivasPorPacienteCasoDeUso,
+    private readonly listarPorPaciente: ListarInternacoesPorPacienteCasoDeUso,
   ) {}
 
   registrarHandler = async (req: Request, res: Response): Promise<void> => {
@@ -45,6 +47,12 @@ export class InternacoesController {
   listarAtivasPorPacienteHandler = async (req: Request, res: Response): Promise<void> => {
     const pacienteId = req.params.pacienteId as string;
     const internacoes = await this.listarAtivasPorPaciente.executar({ pacienteId });
+    res.json(internacoes.map(internacaoParaJson));
+  };
+
+  listarPorPacienteHandler = async (req: Request, res: Response): Promise<void> => {
+    const pacienteId = req.params.pacienteId as string;
+    const internacoes = await this.listarPorPaciente.executar({ pacienteId });
     res.json(internacoes.map(internacaoParaJson));
   };
 }

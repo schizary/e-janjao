@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
-import type { Consulta, Exame, Internacao, Medico, Paciente, Prescricao } from '../types';
+import type { Consulta, Exame, Internacao, Medico, Paciente, Prescricao, PrescricaoItem } from '../types';
 import { ListaSecao } from '../components/SectionList';
-import { Botao, BotaoOutline, Campo, Cartao, Mensagem, ModalFlutuante, Subtitulo, Tela, Titulo } from '../components/ui';
+import { Botao, BotaoOutline, Campo, Cartao, Mensagem, ModalFlutuante, Seletor, Subtitulo, Tela, Titulo } from '../components/ui';
 import {
   cpfValido,
   dataBRparaISO,
@@ -243,38 +243,74 @@ export function ConsultasScreen({ voltar }: { titulo: string; voltar: () => void
   const [dados, setDados] = useState<Consulta[]>([]);
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [medicos, setMedicos] = useState<Medico[]>([]);
+  const [carregandoBase, setCarregandoBase] = useState(true);
+  const [carregandoLista, setCarregandoLista] = useState(false);
   const [modalAberto, setModalAberto] = useState(false);
   const [pacienteId, setPacienteId] = useState('');
   const [medicoId, setMedicoId] = useState('');
   const [inicio, setInicio] = useState('');
   const [fim, setFim] = useState('');
-  const [status, setStatus] = useState<'AGENDADA' | 'CANCELADA' | 'REALIZADA'>('AGENDADA');
   const [observacoes, setObservacoes] = useState('');
   const [mensagem, setMensagem] = useState('');
   const [mensagemModal, setMensagemModal] = useState('');
   const [salvando, setSalvando] = useState(false);
 
-  const carregar = async () => {
-    if (!token) {
-      setMensagem('Sessão expirada. Faça login novamente.');
+  const opcoesPacientes = pacientes.map((p) => ({ valor: p.id, rotulo: p.nomeCompleto }));
+  const opcoesMedicos = medicos.map((m) => ({ valor: m.id, rotulo: `${m.nomeCompleto} • ${m.especialidade}` }));
+
+  const carregarConsultas = async (idPaciente: string) => {
+    if (!token || !idPaciente) {
+      setDados([]);
       return;
     }
+    setCarregandoLista(true);
     try {
-      const [c, p, m] = await Promise.all([api.listarConsultas(token), api.listarPacientes(token), api.listarMedicos(token)]);
-      setDados(c);
-      setPacientes(p);
-      setMedicos(m);
-      setPacienteId((prev) => prev || p[0]?.id || '');
-      setMedicoId((prev) => prev || m[0]?.id || '');
+      const lista = await api.listarConsultasPorPaciente(token, idPaciente);
+      setDados(lista);
     } catch (e) {
       setMensagem(e instanceof Error ? e.message : 'Erro ao carregar consultas.');
+    } finally {
+      setCarregandoLista(false);
     }
   };
-  useEffect(() => { carregar(); }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+    let ativo = true;
+    (async () => {
+      setCarregandoBase(true);
+      try {
+        const [p, m] = await Promise.all([api.listarPacientes(token), api.listarMedicos(token)]);
+        if (!ativo) return;
+        setPacientes(p);
+        setMedicos(m);
+        setPacienteId((prev) => prev || p[0]?.id || '');
+        setMedicoId((prev) => prev || m[0]?.id || '');
+      } catch (e) {
+        if (ativo) setMensagem(e instanceof Error ? e.message : 'Erro ao carregar pacientes e médicos.');
+      } finally {
+        if (ativo) setCarregandoBase(false);
+      }
+    })();
+    return () => { ativo = false; };
+  }, [token]);
+
+  useEffect(() => {
+    void carregarConsultas(pacienteId);
+  }, [token, pacienteId]);
 
   function abrirModal() {
+    if (!pacientes.length) {
+      setMensagem('Cadastre um paciente antes de agendar consultas.');
+      return;
+    }
+    if (!medicos.length) {
+      setMensagem('Cadastre um médico antes de agendar consultas.');
+      return;
+    }
     setObservacoes('');
     setMensagemModal('');
+    setMedicoId((prev) => prev || medicos[0]?.id || '');
     const agora = dataHoraAtualBR();
     setInicio(agora);
     const [, hora] = agora.split(' ');
@@ -295,6 +331,14 @@ export function ConsultasScreen({ voltar }: { titulo: string; voltar: () => void
       setMensagemModal('Sessão expirada. Faça login novamente.');
       return;
     }
+    if (!pacienteId) {
+      setMensagemModal('Selecione um paciente.');
+      return;
+    }
+    if (!medicoId) {
+      setMensagemModal('Selecione um médico.');
+      return;
+    }
     setSalvando(true);
     setMensagemModal('');
 
@@ -312,10 +356,16 @@ export function ConsultasScreen({ voltar }: { titulo: string; voltar: () => void
     }
 
     try {
-      await api.criarConsulta(token, { pacienteId, medicoId, inicio: inicioIso, fim: fimIso, status, observacoes: observacoes || null });
+      await api.criarConsulta(token, {
+        pacienteId,
+        medicoId,
+        inicio: inicioIso,
+        fim: fimIso,
+        observacoes: observacoes.trim() || null,
+      });
       setModalAberto(false);
-      setMensagem('Consulta cadastrada com sucesso.');
-      carregar();
+      setMensagem('Consulta agendada com sucesso.');
+      await carregarConsultas(pacienteId);
     } catch (e) {
       setMensagemModal(e instanceof Error ? e.message : 'Erro ao salvar consulta.');
     } finally {
@@ -323,70 +373,174 @@ export function ConsultasScreen({ voltar }: { titulo: string; voltar: () => void
     }
   }
 
+  const nomeMedico = (id: string) => medicos.find((m) => m.id === id)?.nomeCompleto ?? id;
+
   return (
     <Tela>
       <Cabecalho titulo="Consultas" voltar={voltar} onNovo={abrirModal} textoNovo="Nova consulta" />
       {!!mensagem && <Mensagem texto={mensagem} tipo={mensagem.includes('sucesso') ? 'sucesso' : 'erro'} />}
-      <ListaSecao dados={dados} mapear={(item) => ({ titulo: `${item.paciente?.nomeCompleto || item.pacienteId} com ${item.medico?.nomeCompleto || item.medicoId}`, descricao: `${item.status} • ${new Date(item.inicio).toLocaleString()}` })} />
+      <Cartao>
+        <Seletor
+          label="Paciente"
+          value={pacienteId}
+          onChange={setPacienteId}
+          opcoes={opcoesPacientes}
+          placeholder="Selecione um paciente"
+          disabled={carregandoBase}
+        />
+        <Subtitulo>
+          {carregandoLista ? 'Carregando consultas…' : pacienteId ? 'Consultas do paciente selecionado.' : 'Selecione um paciente para listar.'}
+        </Subtitulo>
+      </Cartao>
+      <ListaSecao
+        dados={dados}
+        vazio={pacienteId ? 'Nenhuma consulta para este paciente.' : 'Selecione um paciente acima.'}
+        mapear={(item) => ({
+          titulo: `Dr(a). ${nomeMedico(item.medicoId)}`,
+          descricao: `${item.status} • ${new Date(item.inicio).toLocaleString('pt-BR')} – ${new Date(item.fim).toLocaleString('pt-BR')}${item.observacoes ? ` • ${item.observacoes}` : ''}`,
+        })}
+      />
 
-      <ModalFlutuante visible={modalAberto} titulo="Nova consulta" onFechar={() => setModalAberto(false)}>
+      <ModalFlutuante visible={modalAberto} titulo="Agendar consulta" onFechar={() => setModalAberto(false)}>
         <Cartao>
-          <Campo label="Paciente ID" value={pacienteId} onChangeText={setPacienteId} placeholder={pacientes[0]?.id} />
-          <Campo label="Médico ID" value={medicoId} onChangeText={setMedicoId} placeholder={medicos[0]?.id} />
+          <Seletor
+            label="Paciente"
+            value={pacienteId}
+            onChange={setPacienteId}
+            opcoes={opcoesPacientes}
+            placeholder="Selecione um paciente"
+          />
+          <Seletor
+            label="Médico"
+            value={medicoId}
+            onChange={setMedicoId}
+            opcoes={opcoesMedicos}
+            placeholder="Selecione um médico"
+          />
           <Campo label="Início" value={inicio} onChangeText={setInicio} tipo="dataHora" placeholder="dd/mm/aaaa hh:mm" />
           <Campo label="Fim" value={fim} onChangeText={setFim} tipo="dataHora" placeholder="dd/mm/aaaa hh:mm" />
-          <Campo label="Status" value={status} onChangeText={(v) => setStatus((v as 'AGENDADA' | 'CANCELADA' | 'REALIZADA') || 'AGENDADA')} />
-          <Campo label="Observações" value={observacoes} onChangeText={setObservacoes} />
+          <Campo label="Observações (opcional)" value={observacoes} onChangeText={setObservacoes} />
           {!!mensagemModal && <Mensagem texto={mensagemModal} tipo="erro" />}
-          <Botao texto={salvando ? 'Cadastrando…' : 'Cadastrar consulta'} onPress={salvar} />
+          <Botao texto={salvando ? 'Agendando…' : 'Agendar consulta'} onPress={salvar} />
         </Cartao>
       </ModalFlutuante>
     </Tela>
   );
 }
 
+type FiltroStatusExame = '' | Exame['status'];
+
+function itemPrescricaoVazio(): PrescricaoItem {
+  return { medicamento: '', dosagem: '', frequencia: '', duracaoDias: null };
+}
+
+function formatarItensPrescricao(itens: PrescricaoItem[]): string {
+  return itens
+    .map((i) => {
+      const duracao = i.duracaoDias != null ? ` • ${i.duracaoDias} dia(s)` : '';
+      return `${i.medicamento} ${i.dosagem} — ${i.frequencia}${duracao}`;
+    })
+    .join('; ');
+}
+
 export function ExamesScreen({ voltar }: { titulo: string; voltar: () => void }) {
   const { token } = useAuth();
   const [dados, setDados] = useState<Exame[]>([]);
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
+  const [carregandoBase, setCarregandoBase] = useState(true);
+  const [carregandoLista, setCarregandoLista] = useState(false);
   const [modalAberto, setModalAberto] = useState(false);
+  const [modalResultadoAberto, setModalResultadoAberto] = useState(false);
+  const [exameResultadoId, setExameResultadoId] = useState('');
   const [pacienteId, setPacienteId] = useState('');
+  const [filtroStatus, setFiltroStatus] = useState<FiltroStatusExame>('');
   const [tipo, setTipo] = useState('');
   const [dataHora, setDataHora] = useState('');
   const [local, setLocal] = useState('Laboratório Central');
-  const [status, setStatus] = useState<'AGENDADO' | 'CANCELADO' | 'REALIZADO'>('AGENDADO');
-  const [resultado, setResultado] = useState('');
+  const [resultadoTexto, setResultadoTexto] = useState('');
   const [mensagem, setMensagem] = useState('');
   const [mensagemModal, setMensagemModal] = useState('');
   const [salvando, setSalvando] = useState(false);
 
-  const carregar = async () => {
-    if (!token) {
-      setMensagem('Sessão expirada. Faça login novamente.');
+  const opcoesPacientes = pacientes.map((p) => ({ valor: p.id, rotulo: p.nomeCompleto }));
+  const opcoesFiltroStatus: Array<{ valor: FiltroStatusExame; rotulo: string }> = [
+    { valor: '', rotulo: 'Todos' },
+    { valor: 'AGENDADO', rotulo: 'Pendentes (agendados)' },
+    { valor: 'REALIZADO', rotulo: 'Realizados' },
+    { valor: 'CANCELADO', rotulo: 'Cancelados' },
+  ];
+
+  const dadosFiltrados = useMemo(() => {
+    if (!filtroStatus) return dados;
+    return dados.filter((e) => e.status === filtroStatus);
+  }, [dados, filtroStatus]);
+
+  const pendentes = useMemo(() => dados.filter((e) => e.status === 'AGENDADO').length, [dados]);
+
+  const carregarExames = async (idPaciente: string) => {
+    if (!token || !idPaciente) {
+      setDados([]);
       return;
     }
+    setCarregandoLista(true);
     try {
-      const [e, p] = await Promise.all([api.listarExames(token), api.listarPacientes(token)]);
-      setDados(e);
-      setPacientes(p);
-      setPacienteId((prev) => prev || p[0]?.id || '');
-    } catch (err) {
-      setMensagem(err instanceof Error ? err.message : 'Erro ao carregar exames.');
+      const lista = await api.listarExamesPorPaciente(token, idPaciente);
+      setDados(lista);
+    } catch (e) {
+      setMensagem(e instanceof Error ? e.message : 'Erro ao carregar exames.');
+    } finally {
+      setCarregandoLista(false);
     }
   };
-  useEffect(() => { carregar(); }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+    let ativo = true;
+    (async () => {
+      setCarregandoBase(true);
+      try {
+        const p = await api.listarPacientes(token);
+        if (!ativo) return;
+        setPacientes(p);
+        setPacienteId((prev) => prev || p[0]?.id || '');
+      } catch (e) {
+        if (ativo) setMensagem(e instanceof Error ? e.message : 'Erro ao carregar pacientes.');
+      } finally {
+        if (ativo) setCarregandoBase(false);
+      }
+    })();
+    return () => { ativo = false; };
+  }, [token]);
+
+  useEffect(() => {
+    void carregarExames(pacienteId);
+  }, [token, pacienteId]);
 
   function abrirModal() {
+    if (!pacientes.length) {
+      setMensagem('Cadastre um paciente antes de agendar exames.');
+      return;
+    }
     setTipo('');
-    setResultado('');
     setDataHora(dataHoraAtualBR());
     setMensagemModal('');
     setModalAberto(true);
   }
 
+  function abrirModalResultado(exameId: string) {
+    setExameResultadoId(exameId);
+    setResultadoTexto('');
+    setMensagemModal('');
+    setModalResultadoAberto(true);
+  }
+
   async function salvar() {
     if (!token) {
       setMensagemModal('Sessão expirada. Faça login novamente.');
+      return;
+    }
+    if (!pacienteId) {
+      setMensagemModal('Selecione um paciente.');
       return;
     }
     setSalvando(true);
@@ -405,12 +559,40 @@ export function ExamesScreen({ voltar }: { titulo: string; voltar: () => void })
     }
 
     try {
-      await api.criarExame(token, { pacienteId, tipo: tipo.trim(), dataHora: dataHoraIso, local: local.trim(), status, resultado: resultado || null });
+      await api.criarExame(token, {
+        pacienteId,
+        tipo: tipo.trim(),
+        dataHora: dataHoraIso,
+        local: local.trim(),
+      });
       setModalAberto(false);
-      setMensagem('Exame cadastrado com sucesso.');
-      carregar();
+      setMensagem('Exame agendado com sucesso.');
+      await carregarExames(pacienteId);
     } catch (e) {
       setMensagemModal(e instanceof Error ? e.message : 'Erro ao salvar exame.');
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  async function salvarResultado() {
+    if (!token) {
+      setMensagemModal('Sessão expirada. Faça login novamente.');
+      return;
+    }
+    if (!resultadoTexto.trim()) {
+      setMensagemModal('Informe o resultado do exame.');
+      return;
+    }
+    setSalvando(true);
+    setMensagemModal('');
+    try {
+      await api.registrarResultadoExame(token, exameResultadoId, resultadoTexto.trim());
+      setModalResultadoAberto(false);
+      setMensagem('Resultado registrado com sucesso.');
+      await carregarExames(pacienteId);
+    } catch (e) {
+      setMensagemModal(e instanceof Error ? e.message : 'Erro ao registrar resultado.');
     } finally {
       setSalvando(false);
     }
@@ -420,18 +602,61 @@ export function ExamesScreen({ voltar }: { titulo: string; voltar: () => void })
     <Tela>
       <Cabecalho titulo="Exames" voltar={voltar} onNovo={abrirModal} textoNovo="Novo exame" />
       {!!mensagem && <Mensagem texto={mensagem} tipo={mensagem.includes('sucesso') ? 'sucesso' : 'erro'} />}
-      <ListaSecao dados={dados} mapear={(item) => ({ titulo: `${item.tipo} • ${item.paciente?.nomeCompleto || item.pacienteId}`, descricao: `${item.status} • ${item.local}` })} />
+      <Cartao>
+        <Seletor
+          label="Paciente"
+          value={pacienteId}
+          onChange={setPacienteId}
+          opcoes={opcoesPacientes}
+          placeholder="Selecione um paciente"
+          disabled={carregandoBase}
+        />
+        <Seletor
+          label="Filtrar status"
+          value={filtroStatus}
+          onChange={(v) => setFiltroStatus(v as FiltroStatusExame)}
+          opcoes={opcoesFiltroStatus}
+          disabled={!pacienteId}
+        />
+        <Subtitulo>
+          {carregandoLista
+            ? 'Carregando exames…'
+            : pacienteId
+              ? `${pendentes} pendente(s) • ${dados.length} no total`
+              : 'Selecione um paciente para listar.'}
+        </Subtitulo>
+      </Cartao>
+      <ListaSecao
+        dados={dadosFiltrados}
+        chave={(item) => item.id}
+        vazio={pacienteId ? 'Nenhum exame para este paciente.' : 'Selecione um paciente acima.'}
+        mapear={(item) => ({
+          titulo: item.tipo,
+          descricao: `${item.status} • ${new Date(item.dataHora).toLocaleString('pt-BR')} • ${item.local}${item.resultado ? ` • ${item.resultado}` : ''}`,
+        })}
+        acoes={(item) =>
+          item.status === 'AGENDADO' ? (
+            <BotaoOutline texto="Registrar resultado" onPress={() => abrirModalResultado(item.id)} />
+          ) : null
+        }
+      />
 
-      <ModalFlutuante visible={modalAberto} titulo="Novo exame" onFechar={() => setModalAberto(false)}>
+      <ModalFlutuante visible={modalAberto} titulo="Agendar exame" onFechar={() => setModalAberto(false)}>
         <Cartao>
-          <Campo label="Paciente ID" value={pacienteId} onChangeText={setPacienteId} placeholder={pacientes[0]?.id} />
-          <Campo label="Tipo" value={tipo} onChangeText={setTipo} />
+          <Seletor label="Paciente" value={pacienteId} onChange={setPacienteId} opcoes={opcoesPacientes} placeholder="Selecione um paciente" />
+          <Campo label="Tipo do exame" value={tipo} onChangeText={setTipo} placeholder="Ex.: Hemograma completo" />
           <Campo label="Data e hora" value={dataHora} onChangeText={setDataHora} tipo="dataHora" placeholder="dd/mm/aaaa hh:mm" />
           <Campo label="Local" value={local} onChangeText={setLocal} />
-          <Campo label="Status" value={status} onChangeText={(v) => setStatus((v as 'AGENDADO' | 'CANCELADO' | 'REALIZADO') || 'AGENDADO')} />
-          <Campo label="Resultado" value={resultado} onChangeText={setResultado} />
           {!!mensagemModal && <Mensagem texto={mensagemModal} tipo="erro" />}
-          <Botao texto={salvando ? 'Cadastrando…' : 'Cadastrar exame'} onPress={salvar} />
+          <Botao texto={salvando ? 'Agendando…' : 'Agendar exame'} onPress={salvar} />
+        </Cartao>
+      </ModalFlutuante>
+
+      <ModalFlutuante visible={modalResultadoAberto} titulo="Registrar resultado" onFechar={() => setModalResultadoAberto(false)}>
+        <Cartao>
+          <Campo label="Resultado" value={resultadoTexto} onChangeText={setResultadoTexto} placeholder="Descreva o resultado" />
+          {!!mensagemModal && <Mensagem texto={mensagemModal} tipo="erro" />}
+          <Botao texto={salvando ? 'Salvando…' : 'Confirmar resultado'} onPress={salvarResultado} />
         </Cartao>
       </ModalFlutuante>
     </Tela>
@@ -443,38 +668,87 @@ export function PrescricoesScreen({ voltar }: { titulo: string; voltar: () => vo
   const [dados, setDados] = useState<Prescricao[]>([]);
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [medicos, setMedicos] = useState<Medico[]>([]);
+  const [carregandoBase, setCarregandoBase] = useState(true);
+  const [carregandoLista, setCarregandoLista] = useState(false);
   const [modalAberto, setModalAberto] = useState(false);
   const [pacienteId, setPacienteId] = useState('');
   const [medicoId, setMedicoId] = useState('');
   const [observacoesGerais, setObservacoesGerais] = useState('');
-  const [medicamento, setMedicamento] = useState('Dipirona');
-  const [dosagem, setDosagem] = useState('500mg');
-  const [frequencia, setFrequencia] = useState('8/8h');
-  const [duracaoDias, setDuracaoDias] = useState('5');
+  const [itens, setItens] = useState<PrescricaoItem[]>([itemPrescricaoVazio()]);
   const [mensagem, setMensagem] = useState('');
   const [mensagemModal, setMensagemModal] = useState('');
   const [salvando, setSalvando] = useState(false);
 
-  const carregar = async () => {
-    if (!token) {
-      setMensagem('Sessão expirada. Faça login novamente.');
+  const opcoesPacientes = pacientes.map((p) => ({ valor: p.id, rotulo: p.nomeCompleto }));
+  const opcoesMedicos = medicos.map((m) => ({ valor: m.id, rotulo: `${m.nomeCompleto} • ${m.especialidade}` }));
+  const nomeMedico = (id: string) => medicos.find((m) => m.id === id)?.nomeCompleto ?? id;
+
+  const carregarPrescricoes = async (idPaciente: string) => {
+    if (!token || !idPaciente) {
+      setDados([]);
       return;
     }
+    setCarregandoLista(true);
     try {
-      const [r, p, m] = await Promise.all([api.listarPrescricoes(token), api.listarPacientes(token), api.listarMedicos(token)]);
-      setDados(r);
-      setPacientes(p);
-      setMedicos(m);
-      setPacienteId((prev) => prev || p[0]?.id || '');
-      setMedicoId((prev) => prev || m[0]?.id || '');
+      const lista = await api.listarPrescricoesPorPaciente(token, idPaciente);
+      setDados(lista);
     } catch (e) {
       setMensagem(e instanceof Error ? e.message : 'Erro ao carregar prescrições.');
+    } finally {
+      setCarregandoLista(false);
     }
   };
-  useEffect(() => { carregar(); }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+    let ativo = true;
+    (async () => {
+      setCarregandoBase(true);
+      try {
+        const [p, m] = await Promise.all([api.listarPacientes(token), api.listarMedicos(token)]);
+        if (!ativo) return;
+        setPacientes(p);
+        setMedicos(m);
+        setPacienteId((prev) => prev || p[0]?.id || '');
+        setMedicoId((prev) => prev || m[0]?.id || '');
+      } catch (e) {
+        if (ativo) setMensagem(e instanceof Error ? e.message : 'Erro ao carregar dados.');
+      } finally {
+        if (ativo) setCarregandoBase(false);
+      }
+    })();
+    return () => { ativo = false; };
+  }, [token]);
+
+  useEffect(() => {
+    void carregarPrescricoes(pacienteId);
+  }, [token, pacienteId]);
+
+  function atualizarItem(index: number, campo: keyof PrescricaoItem, valor: string) {
+    setItens((prev) =>
+      prev.map((item, i) => {
+        if (i !== index) return item;
+        if (campo === 'duracaoDias') {
+          const dias = valor.trim() === '' ? null : Number.parseInt(valor, 10);
+          return { ...item, duracaoDias: Number.isNaN(dias as number) ? null : dias };
+        }
+        return { ...item, [campo]: valor };
+      }),
+    );
+  }
 
   function abrirModal() {
+    if (!pacientes.length) {
+      setMensagem('Cadastre um paciente antes de emitir prescrições.');
+      return;
+    }
+    if (!medicos.length) {
+      setMensagem('Cadastre um médico antes de emitir prescrições.');
+      return;
+    }
     setObservacoesGerais('');
+    setItens([itemPrescricaoVazio()]);
+    setMedicoId((prev) => prev || medicos[0]?.id || '');
     setMensagemModal('');
     setModalAberto(true);
   }
@@ -484,18 +758,37 @@ export function PrescricoesScreen({ voltar }: { titulo: string; voltar: () => vo
       setMensagemModal('Sessão expirada. Faça login novamente.');
       return;
     }
+    if (!pacienteId) {
+      setMensagemModal('Selecione um paciente.');
+      return;
+    }
+    if (!medicoId) {
+      setMensagemModal('Selecione um médico.');
+      return;
+    }
+    const itensValidos = itens.every((i) => i.medicamento.trim() && i.dosagem.trim() && i.frequencia.trim());
+    if (!itensValidos) {
+      setMensagemModal('Preencha medicamento, dosagem e frequência em todos os itens.');
+      return;
+    }
+
     setSalvando(true);
     setMensagemModal('');
     try {
       await api.criarPrescricao(token, {
         pacienteId,
         medicoId,
-        observacoesGerais: observacoesGerais || null,
-        itens: [{ medicamento, dosagem, frequencia, duracaoDias: Number(duracaoDias) || null }],
+        observacoesGerais: observacoesGerais.trim() || null,
+        itens: itens.map((i) => ({
+          medicamento: i.medicamento.trim(),
+          dosagem: i.dosagem.trim(),
+          frequencia: i.frequencia.trim(),
+          duracaoDias: i.duracaoDias ?? null,
+        })),
       });
       setModalAberto(false);
-      setMensagem('Prescrição cadastrada com sucesso.');
-      carregar();
+      setMensagem('Prescrição emitida com sucesso.');
+      await carregarPrescricoes(pacienteId);
     } catch (e) {
       setMensagemModal(e instanceof Error ? e.message : 'Erro ao salvar prescrição.');
     } finally {
@@ -507,19 +800,55 @@ export function PrescricoesScreen({ voltar }: { titulo: string; voltar: () => vo
     <Tela>
       <Cabecalho titulo="Prescrições" voltar={voltar} onNovo={abrirModal} textoNovo="Nova prescrição" />
       {!!mensagem && <Mensagem texto={mensagem} tipo={mensagem.includes('sucesso') ? 'sucesso' : 'erro'} />}
-      <ListaSecao dados={dados} mapear={(item) => ({ titulo: `${item.paciente?.nomeCompleto || item.pacienteId} • ${item.medico?.nomeCompleto || item.medicoId}`, descricao: item.itens.map((it) => `${it.medicamento} ${it.dosagem}`).join(' | ') })} />
+      <Cartao>
+        <Seletor
+          label="Paciente"
+          value={pacienteId}
+          onChange={setPacienteId}
+          opcoes={opcoesPacientes}
+          placeholder="Selecione um paciente"
+          disabled={carregandoBase}
+        />
+        <Subtitulo>
+          {carregandoLista ? 'Carregando prescrições…' : pacienteId ? 'Histórico do paciente selecionado.' : 'Selecione um paciente para listar.'}
+        </Subtitulo>
+      </Cartao>
+      <ListaSecao
+        dados={dados}
+        chave={(item) => item.id}
+        vazio={pacienteId ? 'Nenhuma prescrição para este paciente.' : 'Selecione um paciente acima.'}
+        mapear={(item) => ({
+          titulo: `Dr(a). ${nomeMedico(item.medicoId)}`,
+          descricao: `${formatarItensPrescricao(item.itens)}${item.observacoesGerais ? ` • ${item.observacoesGerais}` : ''}`,
+        })}
+      />
 
-      <ModalFlutuante visible={modalAberto} titulo="Nova prescrição" onFechar={() => setModalAberto(false)}>
+      <ModalFlutuante visible={modalAberto} titulo="Emitir prescrição" onFechar={() => setModalAberto(false)}>
         <Cartao>
-          <Campo label="Paciente ID" value={pacienteId} onChangeText={setPacienteId} placeholder={pacientes[0]?.id} />
-          <Campo label="Médico ID" value={medicoId} onChangeText={setMedicoId} placeholder={medicos[0]?.id} />
-          <Campo label="Observações gerais" value={observacoesGerais} onChangeText={setObservacoesGerais} />
-          <Campo label="Medicamento" value={medicamento} onChangeText={setMedicamento} />
-          <Campo label="Dosagem" value={dosagem} onChangeText={setDosagem} />
-          <Campo label="Frequência" value={frequencia} onChangeText={setFrequencia} />
-          <Campo label="Duração (dias)" value={duracaoDias} onChangeText={setDuracaoDias} tipo="numero" placeholder="5" />
+          <Seletor label="Paciente" value={pacienteId} onChange={setPacienteId} opcoes={opcoesPacientes} placeholder="Selecione um paciente" />
+          <Seletor label="Médico" value={medicoId} onChange={setMedicoId} opcoes={opcoesMedicos} placeholder="Selecione um médico" />
+          <Campo label="Observações gerais (opcional)" value={observacoesGerais} onChangeText={setObservacoesGerais} />
+          {itens.map((item, index) => (
+            <View key={index} style={{ gap: 8, marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#d8ece8' }}>
+              <Subtitulo>Item {index + 1}</Subtitulo>
+              <Campo label="Medicamento" value={item.medicamento} onChangeText={(v) => atualizarItem(index, 'medicamento', v)} />
+              <Campo label="Dosagem" value={item.dosagem} onChangeText={(v) => atualizarItem(index, 'dosagem', v)} />
+              <Campo label="Frequência" value={item.frequencia} onChangeText={(v) => atualizarItem(index, 'frequencia', v)} />
+              <Campo
+                label="Duração (dias)"
+                value={item.duracaoDias != null ? String(item.duracaoDias) : ''}
+                onChangeText={(v) => atualizarItem(index, 'duracaoDias', v)}
+                tipo="numero"
+                placeholder="Opcional"
+              />
+              {itens.length > 1 && (
+                <BotaoOutline texto="Remover item" onPress={() => setItens((prev) => prev.filter((_, i) => i !== index))} />
+              )}
+            </View>
+          ))}
+          <BotaoOutline texto="Adicionar medicamento" onPress={() => setItens((prev) => [...prev, itemPrescricaoVazio()])} />
           {!!mensagemModal && <Mensagem texto={mensagemModal} tipo="erro" />}
-          <Botao texto={salvando ? 'Cadastrando…' : 'Cadastrar prescrição'} onPress={salvar} />
+          <Botao texto={salvando ? 'Emitindo…' : 'Emitir prescrição'} onPress={salvar} />
         </Cartao>
       </ModalFlutuante>
     </Tela>
@@ -530,41 +859,86 @@ export function InternacoesScreen({ voltar }: { titulo: string; voltar: () => vo
   const { token } = useAuth();
   const [dados, setDados] = useState<Internacao[]>([]);
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
+  const [carregandoBase, setCarregandoBase] = useState(true);
+  const [carregandoLista, setCarregandoLista] = useState(false);
   const [modalAberto, setModalAberto] = useState(false);
+  const [modalAltaAberto, setModalAltaAberto] = useState(false);
+  const [internacaoAltaId, setInternacaoAltaId] = useState('');
   const [pacienteId, setPacienteId] = useState('');
-  const [quarto, setQuarto] = useState('101');
-  const [leito, setLeito] = useState('A');
-  const [motivo, setMotivo] = useState('Observação');
+  const [quarto, setQuarto] = useState('');
+  const [leito, setLeito] = useState('');
+  const [motivo, setMotivo] = useState('');
   const [dataEntrada, setDataEntrada] = useState('');
-  const [dataSaida, setDataSaida] = useState('');
-  const [status, setStatus] = useState<'ATIVA' | 'ALTA' | 'TRANSFERIDA'>('ATIVA');
+  const [dataSaidaAlta, setDataSaidaAlta] = useState('');
+  const [observacoesAlta, setObservacoesAlta] = useState('');
   const [observacoes, setObservacoes] = useState('');
   const [mensagem, setMensagem] = useState('');
   const [mensagemModal, setMensagemModal] = useState('');
   const [salvando, setSalvando] = useState(false);
 
-  const carregar = async () => {
-    if (!token) {
-      setMensagem('Sessão expirada. Faça login novamente.');
+  const opcoesPacientes = pacientes.map((p) => ({ valor: p.id, rotulo: p.nomeCompleto }));
+  const internacoesAtivas = useMemo(() => dados.filter((i) => i.status === 'ATIVA'), [dados]);
+  const pacienteInternado = internacoesAtivas.length > 0;
+
+  const carregarInternacoes = async (idPaciente: string) => {
+    if (!token || !idPaciente) {
+      setDados([]);
       return;
     }
+    setCarregandoLista(true);
     try {
-      const [i, p] = await Promise.all([api.listarInternacoes(token), api.listarPacientes(token)]);
-      setDados(i);
-      setPacientes(p);
-      setPacienteId((prev) => prev || p[0]?.id || '');
+      const lista = await api.listarInternacoesPorPaciente(token, idPaciente);
+      setDados(lista);
     } catch (e) {
       setMensagem(e instanceof Error ? e.message : 'Erro ao carregar internações.');
+    } finally {
+      setCarregandoLista(false);
     }
   };
-  useEffect(() => { carregar(); }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+    let ativo = true;
+    (async () => {
+      setCarregandoBase(true);
+      try {
+        const p = await api.listarPacientes(token);
+        if (!ativo) return;
+        setPacientes(p);
+        setPacienteId((prev) => prev || p[0]?.id || '');
+      } catch (e) {
+        if (ativo) setMensagem(e instanceof Error ? e.message : 'Erro ao carregar pacientes.');
+      } finally {
+        if (ativo) setCarregandoBase(false);
+      }
+    })();
+    return () => { ativo = false; };
+  }, [token]);
+
+  useEffect(() => {
+    void carregarInternacoes(pacienteId);
+  }, [token, pacienteId]);
 
   function abrirModal() {
+    if (!pacientes.length) {
+      setMensagem('Cadastre um paciente antes de registrar internações.');
+      return;
+    }
+    setQuarto('');
+    setLeito('');
+    setMotivo('');
     setObservacoes('');
-    setDataSaida('');
     setDataEntrada(dataHoraAtualBR());
     setMensagemModal('');
     setModalAberto(true);
+  }
+
+  function abrirModalAlta(internacaoId: string) {
+    setInternacaoAltaId(internacaoId);
+    setDataSaidaAlta(dataHoraAtualBR());
+    setObservacoesAlta('');
+    setMensagemModal('');
+    setModalAltaAberto(true);
   }
 
   async function salvar() {
@@ -572,23 +946,24 @@ export function InternacoesScreen({ voltar }: { titulo: string; voltar: () => vo
       setMensagemModal('Sessão expirada. Faça login novamente.');
       return;
     }
+    if (!pacienteId) {
+      setMensagemModal('Selecione um paciente.');
+      return;
+    }
     setSalvando(true);
     setMensagemModal('');
+
+    if (!quarto.trim() || !leito.trim() || !motivo.trim()) {
+      setMensagemModal('Informe quarto, leito e motivo.');
+      setSalvando(false);
+      return;
+    }
 
     const entradaIso = dataHoraBRparaISO(dataEntrada);
     if (!entradaIso) {
       setMensagemModal('Data de entrada inválida. Use dd/mm/aaaa hh:mm.');
       setSalvando(false);
       return;
-    }
-    let saidaIso: string | null = null;
-    if (dataSaida.trim()) {
-      saidaIso = dataHoraBRparaISO(dataSaida);
-      if (!saidaIso) {
-        setMensagemModal('Data de saída inválida. Use dd/mm/aaaa hh:mm.');
-        setSalvando(false);
-        return;
-      }
     }
 
     try {
@@ -598,15 +973,41 @@ export function InternacoesScreen({ voltar }: { titulo: string; voltar: () => vo
         leito: leito.trim(),
         motivo: motivo.trim(),
         dataEntrada: entradaIso,
-        dataSaida: saidaIso,
-        status,
-        observacoes: observacoes || null,
+        observacoes: observacoes.trim() || null,
       });
       setModalAberto(false);
-      setMensagem('Internação cadastrada com sucesso.');
-      carregar();
+      setMensagem('Internação registrada com sucesso.');
+      await carregarInternacoes(pacienteId);
     } catch (e) {
       setMensagemModal(e instanceof Error ? e.message : 'Erro ao salvar internação.');
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  async function salvarAlta() {
+    if (!token) {
+      setMensagemModal('Sessão expirada. Faça login novamente.');
+      return;
+    }
+    const saidaIso = dataHoraBRparaISO(dataSaidaAlta);
+    if (!saidaIso) {
+      setMensagemModal('Data de saída inválida. Use dd/mm/aaaa hh:mm.');
+      return;
+    }
+
+    setSalvando(true);
+    setMensagemModal('');
+    try {
+      await api.darAltaInternacao(token, internacaoAltaId, {
+        dataSaida: saidaIso,
+        observacoes: observacoesAlta.trim() || null,
+      });
+      setModalAltaAberto(false);
+      setMensagem('Alta registrada com sucesso.');
+      await carregarInternacoes(pacienteId);
+    } catch (e) {
+      setMensagemModal(e instanceof Error ? e.message : 'Erro ao registrar alta.');
     } finally {
       setSalvando(false);
     }
@@ -616,20 +1017,59 @@ export function InternacoesScreen({ voltar }: { titulo: string; voltar: () => vo
     <Tela>
       <Cabecalho titulo="Internações" voltar={voltar} onNovo={abrirModal} textoNovo="Nova internação" />
       {!!mensagem && <Mensagem texto={mensagem} tipo={mensagem.includes('sucesso') ? 'sucesso' : 'erro'} />}
-      <ListaSecao dados={dados} mapear={(item) => ({ titulo: `${item.paciente?.nomeCompleto || item.pacienteId} • quarto ${item.quarto}/${item.leito}`, descricao: `${item.status} • ${item.motivo}` })} />
+      <Cartao>
+        <Seletor
+          label="Paciente"
+          value={pacienteId}
+          onChange={setPacienteId}
+          opcoes={opcoesPacientes}
+          placeholder="Selecione um paciente"
+          disabled={carregandoBase}
+        />
+        <Subtitulo>
+          {carregandoLista
+            ? 'Carregando internações…'
+            : !pacienteId
+              ? 'Selecione um paciente para listar.'
+              : pacienteInternado
+                ? `Status: internado (${internacoesAtivas.length} ativa(s))`
+                : 'Status: não internado'}
+        </Subtitulo>
+      </Cartao>
+      <ListaSecao
+        dados={dados}
+        chave={(item) => item.id}
+        vazio={pacienteId ? 'Nenhuma internação para este paciente.' : 'Selecione um paciente acima.'}
+        mapear={(item) => ({
+          titulo: `Quarto ${item.quarto} / Leito ${item.leito}`,
+          descricao: `${item.status} • ${item.motivo} • Entrada: ${new Date(item.dataEntrada).toLocaleString('pt-BR')}${item.dataSaida ? ` • Saída: ${new Date(item.dataSaida).toLocaleString('pt-BR')}` : ''}`,
+        })}
+        acoes={(item) =>
+          item.status === 'ATIVA' ? (
+            <BotaoOutline texto="Registrar alta" onPress={() => abrirModalAlta(item.id)} />
+          ) : null
+        }
+      />
 
-      <ModalFlutuante visible={modalAberto} titulo="Nova internação" onFechar={() => setModalAberto(false)}>
+      <ModalFlutuante visible={modalAberto} titulo="Registrar internação" onFechar={() => setModalAberto(false)}>
         <Cartao>
-          <Campo label="Paciente ID" value={pacienteId} onChangeText={setPacienteId} placeholder={pacientes[0]?.id} />
-          <Campo label="Quarto" value={quarto} onChangeText={setQuarto} />
-          <Campo label="Leito" value={leito} onChangeText={setLeito} />
-          <Campo label="Motivo" value={motivo} onChangeText={setMotivo} />
+          <Seletor label="Paciente" value={pacienteId} onChange={setPacienteId} opcoes={opcoesPacientes} placeholder="Selecione um paciente" />
+          <Campo label="Quarto" value={quarto} onChangeText={setQuarto} placeholder="Ex.: 201" />
+          <Campo label="Leito" value={leito} onChangeText={setLeito} placeholder="Ex.: A" />
+          <Campo label="Motivo" value={motivo} onChangeText={setMotivo} placeholder="Motivo da internação" />
           <Campo label="Data de entrada" value={dataEntrada} onChangeText={setDataEntrada} tipo="dataHora" placeholder="dd/mm/aaaa hh:mm" />
-          <Campo label="Data de saída (opcional)" value={dataSaida} onChangeText={setDataSaida} tipo="dataHora" placeholder="dd/mm/aaaa hh:mm" />
-          <Campo label="Status" value={status} onChangeText={(v) => setStatus((v as 'ATIVA' | 'ALTA' | 'TRANSFERIDA') || 'ATIVA')} />
-          <Campo label="Observações" value={observacoes} onChangeText={setObservacoes} />
+          <Campo label="Observações (opcional)" value={observacoes} onChangeText={setObservacoes} />
           {!!mensagemModal && <Mensagem texto={mensagemModal} tipo="erro" />}
-          <Botao texto={salvando ? 'Cadastrando…' : 'Cadastrar internação'} onPress={salvar} />
+          <Botao texto={salvando ? 'Registrando…' : 'Registrar internação'} onPress={salvar} />
+        </Cartao>
+      </ModalFlutuante>
+
+      <ModalFlutuante visible={modalAltaAberto} titulo="Registrar alta" onFechar={() => setModalAltaAberto(false)}>
+        <Cartao>
+          <Campo label="Data de saída" value={dataSaidaAlta} onChangeText={setDataSaidaAlta} tipo="dataHora" placeholder="dd/mm/aaaa hh:mm" />
+          <Campo label="Observações da alta (opcional)" value={observacoesAlta} onChangeText={setObservacoesAlta} />
+          {!!mensagemModal && <Mensagem texto={mensagemModal} tipo="erro" />}
+          <Botao texto={salvando ? 'Salvando…' : 'Confirmar alta'} onPress={salvarAlta} />
         </Cartao>
       </ModalFlutuante>
     </Tela>

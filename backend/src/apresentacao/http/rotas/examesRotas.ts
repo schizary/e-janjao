@@ -19,6 +19,11 @@ export function criarExamesRotas(controller: ExamesController): Router {
     validarCorpo(registrarResultadoExameSchema),
     controller.registrarResultadoHandler,
   );
+  router.get(
+    '/paciente/:pacienteId',
+    autenticacaoMiddleware,
+    controller.listarPorPacienteHandler,
+  );
 
   return router;
 }

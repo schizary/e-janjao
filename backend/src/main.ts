@@ -18,12 +18,14 @@ import { AgendarConsultaCasoDeUso } from './application/consultas/casos-de-uso/A
 import { CancelarConsultaCasoDeUso } from './application/consultas/casos-de-uso/CancelarConsultaCasoDeUso';
 import { ListarConsultasPorPacienteCasoDeUso } from './application/consultas/casos-de-uso/ListarConsultasPorPacienteCasoDeUso';
 import { AgendarExameCasoDeUso } from './application/exames/casos-de-uso/AgendarExameCasoDeUso';
+import { ListarExamesPorPacienteCasoDeUso } from './application/exames/casos-de-uso/ListarExamesPorPacienteCasoDeUso';
 import { RegistrarResultadoExameCasoDeUso } from './application/exames/casos-de-uso/RegistrarResultadoExameCasoDeUso';
 import { EmitirPrescricaoCasoDeUso } from './application/prescricoes/casos-de-uso/EmitirPrescricaoCasoDeUso';
 import { ListarPrescricoesPorPacienteCasoDeUso } from './application/prescricoes/casos-de-uso/ListarPrescricoesPorPacienteCasoDeUso';
 import { RegistrarInternacaoCasoDeUso } from './application/internacoes/casos-de-uso/RegistrarInternacaoCasoDeUso';
 import { DarAltaPacienteCasoDeUso } from './application/internacoes/casos-de-uso/DarAltaPacienteCasoDeUso';
 import { ListarInternacoesAtivasPorPacienteCasoDeUso } from './application/internacoes/casos-de-uso/ListarInternacoesAtivasPorPacienteCasoDeUso';
+import { ListarInternacoesPorPacienteCasoDeUso } from './application/internacoes/casos-de-uso/ListarInternacoesPorPacienteCasoDeUso';
 import { AutenticarUsuarioCasoDeUso } from './application/autenticacao/casos-de-uso/AutenticarUsuarioCasoDeUso';
 import { PacienteRepositorioPrisma } from './infraestrutura/repositorios/prisma/PacienteRepositorioPrisma';
 import { MedicoRepositorioPrisma } from './infraestrutura/repositorios/prisma/MedicoRepositorioPrisma';
@@ -71,6 +73,7 @@ const agendarExame = new AgendarExameCasoDeUso(
   geradorId,
 );
 const registrarResultadoExame = new RegistrarResultadoExameCasoDeUso(exameRepositorio);
+const listarExamesPorPaciente = new ListarExamesPorPacienteCasoDeUso(exameRepositorio);
 
 const emitirPrescricao = new EmitirPrescricaoCasoDeUso(
   prescricaoRepositorio,
@@ -89,6 +92,7 @@ const darAltaPaciente = new DarAltaPacienteCasoDeUso(internacaoRepositorio);
 const listarInternacoesAtivasPorPaciente = new ListarInternacoesAtivasPorPacienteCasoDeUso(
   internacaoRepositorio,
 );
+const listarInternacoesPorPaciente = new ListarInternacoesPorPacienteCasoDeUso(internacaoRepositorio);
 
 const autenticarUsuario = new AutenticarUsuarioCasoDeUso(
   usuarioRepositorio,
@@ -109,12 +113,13 @@ const controllers = {
     cancelarConsulta,
     listarConsultasPorPaciente,
   ),
-  exames: new ExamesController(agendarExame, registrarResultadoExame),
+  exames: new ExamesController(agendarExame, registrarResultadoExame, listarExamesPorPaciente),
   prescricoes: new PrescricoesController(emitirPrescricao, listarPrescricoesPorPaciente),
   internacoes: new InternacoesController(
     registrarInternacao,
     darAltaPaciente,
     listarInternacoesAtivasPorPaciente,
+    listarInternacoesPorPaciente,
   ),
   login: new LoginController(autenticarUsuario),
 };

@@ -34,6 +34,24 @@ export function PaginaInicial() {
               Agendamento e acompanhamento por paciente.
             </p>
           </a>
+          <a className="card card--padrao card--hover" href="/exames" style={{ display: 'block' }}>
+            <h2 style={{ marginBottom: 'var(--espaco-2)', fontSize: '1.1rem' }}>Exames</h2>
+            <p style={{ margin: 0 }}>
+              Agendamento, pendências e registro de resultados.
+            </p>
+          </a>
+          <a className="card card--padrao card--hover" href="/prescricoes" style={{ display: 'block' }}>
+            <h2 style={{ marginBottom: 'var(--espaco-2)', fontSize: '1.1rem' }}>Prescrições</h2>
+            <p style={{ margin: 0 }}>
+              Emissão de receitas e histórico por paciente.
+            </p>
+          </a>
+          <a className="card card--padrao card--hover" href="/internacoes" style={{ display: 'block' }}>
+            <h2 style={{ marginBottom: 'var(--espaco-2)', fontSize: '1.1rem' }}>Internações</h2>
+            <p style={{ margin: 0 }}>
+              Registro de internação, altas e status do paciente.
+            </p>
+          </a>
         </div>
       </div>
     </div>
