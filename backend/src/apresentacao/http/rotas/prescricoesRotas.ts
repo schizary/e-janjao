@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { PrescricoesController } from '../controllers/prescricoes/PrescricoesController';
+import { asyncHandler } from '../middlewares/AsyncHandler';
 import { validarCorpo } from '../middlewares/ValidacaoMiddleware';
 import { autenticacaoMiddleware } from '../middlewares/AutenticacaoMiddleware';
 import { emitirPrescricaoSchema } from '../validacoes/prescricoesSchemas';
@@ -11,12 +12,12 @@ export function criarPrescricoesRotas(controller: PrescricoesController): Router
     '/',
     autenticacaoMiddleware,
     validarCorpo(emitirPrescricaoSchema),
-    controller.emitirHandler,
+    asyncHandler(controller.emitirHandler),
   );
   router.get(
     '/paciente/:pacienteId',
     autenticacaoMiddleware,
-    controller.listarPorPacienteHandler,
+    asyncHandler(controller.listarPorPacienteHandler),
   );
 
   return router;

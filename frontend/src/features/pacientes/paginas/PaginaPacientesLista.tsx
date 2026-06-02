@@ -4,6 +4,7 @@ import { useAuth } from '@/features/auth';
 import type { Paciente } from '@/shared/tipos/api';
 import { ErroApi } from '@/shared/api/cliente';
 import { criarPaciente, listarPacientes, type CriarPacienteEntrada } from '@/features/pacientes/api';
+import { mascaraCpf } from '@/shared/utils/mascaras';
 
 function obterMensagemErro(err: unknown): string {
   if (err instanceof ErroApi) return err.message;
@@ -266,9 +267,11 @@ export function PaginaPacientesLista() {
                   <input
                     id="modal-cpf"
                     inputMode="numeric"
-                    placeholder="Somente números ou com pontuação"
+                    autoComplete="off"
+                    placeholder="000.000.000-00"
+                    maxLength={14}
                     value={form.cpf}
-                    onChange={(e) => setForm((f) => ({ ...f, cpf: e.target.value }))}
+                    onChange={(e) => setForm((f) => ({ ...f, cpf: mascaraCpf(e.target.value) }))}
                   />
                   {errosModal.cpf && <div className="campo__erro">{errosModal.cpf}</div>}
                 </div>

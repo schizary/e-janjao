@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { ConsultasController } from '../controllers/consultas/ConsultasController';
+import { asyncHandler } from '../middlewares/AsyncHandler';
 import { validarCorpo } from '../middlewares/ValidacaoMiddleware';
 import { autenticacaoMiddleware } from '../middlewares/AutenticacaoMiddleware';
 import { agendarConsultaSchema, cancelarConsultaSchema } from '../validacoes/consultasSchemas';
@@ -11,18 +12,18 @@ export function criarConsultasRotas(controller: ConsultasController): Router {
     '/',
     autenticacaoMiddleware,
     validarCorpo(agendarConsultaSchema),
-    controller.agendarHandler,
+    asyncHandler(controller.agendarHandler),
   );
   router.post(
     '/:id/cancelar',
     autenticacaoMiddleware,
     validarCorpo(cancelarConsultaSchema),
-    controller.cancelarHandler,
+    asyncHandler(controller.cancelarHandler),
   );
   router.get(
     '/paciente/:pacienteId',
     autenticacaoMiddleware,
-    controller.listarPorPacienteHandler,
+    asyncHandler(controller.listarPorPacienteHandler),
   );
 
   return router;

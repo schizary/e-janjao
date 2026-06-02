@@ -36,9 +36,7 @@ NODE_ENV="development"
 ```bash
 cd backend
 npm install
-npm run prisma:generate
-npm run prisma:push
-npm run seed
+npx prisma generate
 npm run dev
 ```
 
@@ -81,3 +79,6 @@ npm start
 - CRUD completo para internações
 - Seed com dados iniciais
 - Workflow de CI
+
+- o admin é admin@janjao.com.br a senha é 123456
+

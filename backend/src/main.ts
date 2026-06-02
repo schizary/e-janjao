@@ -127,6 +127,14 @@ const controllers = {
 const app = criarServidor(controllers);
 const porta = ambiente.porta;
 
+process.on('unhandledRejection', (motivo) => {
+  console.error('[unhandledRejection] Promessa rejeitada sem tratamento:', motivo);
+});
+
+process.on('uncaughtException', (erro) => {
+  console.error('[uncaughtException]', erro);
+});
+
 app.listen(porta, () => {
   console.log(`Servidor rodando em http://localhost:${porta}`);
   console.log(`Health: http://localhost:${porta}/health`);

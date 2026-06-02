@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { InternacoesController } from '../controllers/internacoes/InternacoesController';
+import { asyncHandler } from '../middlewares/AsyncHandler';
 import { validarCorpo } from '../middlewares/ValidacaoMiddleware';
 import { autenticacaoMiddleware } from '../middlewares/AutenticacaoMiddleware';
 import {
@@ -14,23 +15,23 @@ export function criarInternacoesRotas(controller: InternacoesController): Router
     '/',
     autenticacaoMiddleware,
     validarCorpo(registrarInternacaoSchema),
-    controller.registrarHandler,
+    asyncHandler(controller.registrarHandler),
   );
   router.post(
     '/:id/alta',
     autenticacaoMiddleware,
     validarCorpo(darAltaSchema),
-    controller.darAltaHandler,
+    asyncHandler(controller.darAltaHandler),
   );
   router.get(
     '/paciente/:pacienteId/ativas',
     autenticacaoMiddleware,
-    controller.listarAtivasPorPacienteHandler,
+    asyncHandler(controller.listarAtivasPorPacienteHandler),
   );
   router.get(
     '/paciente/:pacienteId',
     autenticacaoMiddleware,
-    controller.listarPorPacienteHandler,
+    asyncHandler(controller.listarPorPacienteHandler),
   );
 
   return router;

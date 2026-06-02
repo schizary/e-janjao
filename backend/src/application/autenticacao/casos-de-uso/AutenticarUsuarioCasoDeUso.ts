@@ -1,5 +1,6 @@
 import { Usuario } from '../../../domain/usuarios/entidades/Usuario';
 import { UsuarioRepositorio } from '../../../domain/usuarios/repositorios/UsuarioRepositorio';
+import { ErroAplicacao } from '../../../shared/erros/ErroAplicacao';
 import { ComparadorSenha } from '../servicos/ComparadorSenha';
 import { EmissorTokenAcesso } from '../servicos/EmissorTokenAcesso';
 import { LoginDTO } from '../dtos/LoginDTO';
@@ -21,7 +22,7 @@ export class AutenticarUsuarioCasoDeUso {
 
     const usuario = await this.usuarioRepositorio.buscarPorEmail(emailNormalizado);
     if (!usuario) {
-      throw new Error('Credenciais inválidas');
+      throw new ErroAplicacao('Credenciais inválidas', 401);
     }
 
     const dadosUsuario = usuario.obterDados();
@@ -32,7 +33,7 @@ export class AutenticarUsuarioCasoDeUso {
     );
 
     if (!senhaCorreta) {
-      throw new Error('Credenciais inválidas');
+      throw new ErroAplicacao('Credenciais inválidas', 401);
     }
 
     const tokenAcesso = await this.emissorTokenAcesso.emitir({

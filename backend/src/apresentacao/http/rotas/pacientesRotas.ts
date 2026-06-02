@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { PacientesController } from '../controllers/pacientes/PacientesController';
+import { asyncHandler } from '../middlewares/AsyncHandler';
 import { validarCorpo, validarQuery } from '../middlewares/ValidacaoMiddleware';
 import { autenticacaoMiddleware } from '../middlewares/AutenticacaoMiddleware';
 import {
@@ -15,21 +16,21 @@ export function criarPacientesRotas(controller: PacientesController): Router {
     '/',
     autenticacaoMiddleware,
     validarCorpo(criarPacienteSchema),
-    controller.criar,
+    asyncHandler(controller.criar),
   );
   router.patch(
     '/:id/contato',
     autenticacaoMiddleware,
     validarCorpo(atualizarContatoPacienteSchema),
-    controller.atualizarContatoHandler,
+    asyncHandler(controller.atualizarContatoHandler),
   );
   router.get(
     '/',
     autenticacaoMiddleware,
     validarQuery(listarPacientesQuerySchema),
-    controller.listarHandler,
+    asyncHandler(controller.listarHandler),
   );
-  router.get('/:id', autenticacaoMiddleware, controller.buscarPorIdHandler);
+  router.get('/:id', autenticacaoMiddleware, asyncHandler(controller.buscarPorIdHandler));
 
   return router;
 }

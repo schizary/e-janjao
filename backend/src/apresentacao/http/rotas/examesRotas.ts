@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { ExamesController } from '../controllers/exames/ExamesController';
+import { asyncHandler } from '../middlewares/AsyncHandler';
 import { validarCorpo } from '../middlewares/ValidacaoMiddleware';
 import { autenticacaoMiddleware } from '../middlewares/AutenticacaoMiddleware';
 import { agendarExameSchema, registrarResultadoExameSchema } from '../validacoes/examesSchemas';
@@ -11,18 +12,18 @@ export function criarExamesRotas(controller: ExamesController): Router {
     '/',
     autenticacaoMiddleware,
     validarCorpo(agendarExameSchema),
-    controller.agendarHandler,
+    asyncHandler(controller.agendarHandler),
   );
   router.patch(
     '/:id/resultado',
     autenticacaoMiddleware,
     validarCorpo(registrarResultadoExameSchema),
-    controller.registrarResultadoHandler,
+    asyncHandler(controller.registrarResultadoHandler),
   );
   router.get(
     '/paciente/:pacienteId',
     autenticacaoMiddleware,
-    controller.listarPorPacienteHandler,
+    asyncHandler(controller.listarPorPacienteHandler),
   );
 
   return router;

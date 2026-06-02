@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth';
 import { ErroApi } from '@/shared/api/cliente';
 import { criarPaciente, type CriarPacienteEntrada } from '@/features/pacientes/api';
+import { mascaraCpf } from '@/shared/utils/mascaras';
 
 type ErrosCampos = Partial<Record<keyof CriarPacienteEntrada, string>>;
 
@@ -124,9 +125,11 @@ export function PaginaPacienteNovo() {
               <input
                 id="cpf"
                 inputMode="numeric"
-                placeholder="Somente números ou com pontuação"
+                autoComplete="off"
+                placeholder="000.000.000-00"
+                maxLength={14}
                 value={form.cpf}
-                onChange={(e) => setForm((f) => ({ ...f, cpf: e.target.value }))}
+                onChange={(e) => setForm((f) => ({ ...f, cpf: mascaraCpf(e.target.value) }))}
               />
               {erros.cpf && <div className="campo__erro">{erros.cpf}</div>}
             </div>
